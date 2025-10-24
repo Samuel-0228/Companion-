@@ -2,7 +2,7 @@ from flask import Flask, request
 import os
 import asyncio
 import logging  # For structured logs
-from telegram import Bot
+from telegram import Bot, Update  # Added Update import
 from telegram.ext import ApplicationBuilder
 from bot.config import BOT_TOKEN
 from bot.main import add_handlers
@@ -36,8 +36,12 @@ def webhook():
 
         logger.info(f"Webhook received: update_id={json_data.get('update_id', 'unknown')}")
 
-        # Parse update (v22+ method)
-        update = bot_app.bot.parse_update(json_data)
+        # Parse update (v22+ correct method: Use Update.de_json)
+        update = Update.de_json(json_data, bot_app.bot)
+        if update is None:
+            logger.warning("Failed to parse update from JSON")
+            return 'Invalid update', 400
+
         logger.info(f"Update parsed: chat_id={getattr(update, 'effective_chat', {}).id if update else 'None'}")
 
         # Async process in sync context
